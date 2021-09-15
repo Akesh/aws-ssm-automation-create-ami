@@ -1,0 +1,75 @@
+{
+  "description": "Creates an AMI and applies tags",
+  "assumeRole": "{{ AutomationAssumeRole }}",
+  "schemaVersion": "0.3",
+  "parameters": {
+    "AutomationAssumeRole": {
+      "default": "",
+      "description": "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf. ",
+      "type": "String"
+    },
+    "DeleteOnKey": {
+      "default": "DeleteOn",
+      "description": "Enable Delete Key",
+      "type": "String"
+    },
+    "InstanceId": {
+      "description": "(Required) The ID of the Amazon EC2 instance.",
+      "type": "String"
+    },
+    "AMINameValue": {
+      "default": "",
+      "description": "AMI Name Value",
+      "type": "String"
+    },
+    "DeleteOnValue": {
+      "default": "",
+      "description": "Enable Delete Value",
+      "type": "String"
+    },
+    "AMINameKey": {
+      "default": "Name",
+      "description": "AMI Name Key",
+      "type": "String"
+    },
+    "NoReboot": {
+      "default": false,
+      "description": "(Optional) Default fault of true will reboot the instance before creating the image.",
+      "type": "Boolean"
+    }
+  },
+  "mainSteps": [
+    {
+      "inputs": {
+        "ImageName": "{{AMINameValue}}_{{automation:EXECUTION_ID}}",
+        "InstanceId": "{{ InstanceId }}",
+        "NoReboot": "{{ NoReboot }}"
+      },
+      "name": "createImage",
+      "action": "aws:createImage",
+      "onFailure": "Abort",
+      "nextStep": "tagAmi"
+    },
+    {
+      "inputs": {
+        "ResourceIds": [
+          "{{ createImage.ImageId }}"
+        ],
+        "ResourceType": "EC2",
+        "Tags": [
+          {
+            "Value": "{{ AMINameValue }}",
+            "Key": "{{ AMINameKey }}"
+          },
+          {
+            "Value": "{{ DeleteOnValue }}",
+            "Key": "{{ DeleteOnKey }}"
+          }
+        ]
+      },
+      "name": "tagAmi",
+      "action": "aws:createTags",
+      "isCritical": false
+    }
+  ]
+}
